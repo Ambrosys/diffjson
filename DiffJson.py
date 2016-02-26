@@ -15,12 +15,15 @@ import sys
 import contextlib
 
 """
+Note: JSON files are loaded with OrderedDict when supported (Python >= 2.7).
+
 Two examples resulting in the following output (but colored).
-    Output:
-        * root.a: 2 (was 1)
-        < root.b: true
-    Initialization:
-        diffJson = DiffJson( {'root':{'a':1,'b':True}}, {'root':{'a':2}} )
+    Output (when initialized with OrderedDict instead of regular dict):
+        * a.x: 1 <> 2
+        < a.y: true
+        > b: null
+    Initialization (with regular dict for simplicity in this example):
+        diffJson = DiffJson( {'a':{'x':1,'y':True}}, {'a':{'x':2},'b':None} )
         diffJson.colored = True
     Option 1: Simple use case:
         diffJson.printDiff( 4 )
@@ -30,17 +33,22 @@ Two examples resulting in the following output (but colored).
         diffPrinter.result = []
         diffJson( diffPrinter )
         print( '    ' + '\n    '.join( diffPrinter.result ) )
+    The API supports to change furthermore:
+        - how to print modified values via property modifiedValueFormatter
+        - the prefixes via setPrefixes()
+        - the colors used via setColors()
 """
 
 class DiffJson(object):
     
     def __init__( self, json1, json2 ):
-        self._colored = False
         self._json1 = json1
         self._json2 = json2
+        self._colored = False
+        self._modifiedValueFormatter = lambda v1, v2: v1 + ' > ' + v2
         self._prefix_added    = '> '
         self._prefix_removed  = '< '
-        self._prefix_modified = '* '
+        self._prefix_modified = '~ '
         self._color_added    = '\033[92m' # Green
         self._color_removed  = '\033[91m' # Red
         self._color_modified = '\033[94m' # Blue
@@ -75,6 +83,14 @@ class DiffJson(object):
     @colored.setter
     def colored( self, value ):
         self._colored = value
+        
+    @property
+    def modifiedValueFormatter( self ):
+        return self._modifiedValueFormatter
+    
+    @modifiedValueFormatter.setter
+    def modifiedValueFormatter( self, value ):
+        self._modifiedValueFormatter = value
     
     def setPrefixes( self, added, removed, modified ):
         self._prefix_added = added
@@ -183,6 +199,8 @@ class DiffJson(object):
                 self.__diffList( self._combinePath( path, key ), original, modified )
             else:
                 self.__printer( self.prefix_modified + self._coloredKey( path, key, self.color_modified ) + ': ' +
-                    self.color_added + self._prettyValue( modified ) + self.color_end + ' (was ' +
-                    self.color_removed + self._prettyValue( original ) + self.color_end + ')' 
+                    self.modifiedValueFormatter(
+                        self.color_removed + self._prettyValue( original ) + self.color_end,
+                        self.color_added + self._prettyValue( modified ) + self.color_end
+                        )
                     )
