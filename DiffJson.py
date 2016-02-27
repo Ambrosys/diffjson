@@ -10,7 +10,6 @@ __email__ = "fabianvss@gmail.com"
 import json
 import copy
 from collections import OrderedDict
-import argparse
 import sys
 import contextlib
 
