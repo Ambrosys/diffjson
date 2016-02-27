@@ -67,6 +67,22 @@ class DiffJson(object):
             json1 = json.load( file1 )
             json2 = json.load( file2 )
         return cls( json1, json2 )
+    
+    def select1( self, path, delimiter ):
+        json = DiffJson.getPath( self._json1, path, delimiter )
+        if json is not None:
+            self._json1 = json
+            return True
+        else:
+            return False
+    
+    def select2( self, path, delimiter ):
+        json = DiffJson.getPath( self._json2, path, delimiter )
+        if json is not None:
+            self._json2 = json
+            return True
+        else:
+            return False
         
     def __call__( self, printer ):
         self.__printer = printer
@@ -128,6 +144,19 @@ class DiffJson(object):
     @property
     def color_end( self ):
         return self.__color_end if self._colored else ''
+    
+    @staticmethod
+    def getPath( json, path, delimiter ):
+        elem = json
+        try:
+            for x in path.strip( delimiter ).split( delimiter ):
+                if isinstance( elem, dict ):
+                    elem = elem[x]
+                elif isinstance( elem, list ):
+                    elem = elem[int(x)]
+        except:
+            return None
+        return elem
         
     def _coloredKey( self, path, key, color ):
         if isinstance( key, int ):

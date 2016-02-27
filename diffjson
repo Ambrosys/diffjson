@@ -10,6 +10,9 @@ def main():
     parser = argparse.ArgumentParser( description='Diff JSON files.' )
     parser.add_argument( 'file1', type = argparse.FileType('r') )
     parser.add_argument( 'file2', type = argparse.FileType('r') )
+    parser.add_argument( '--path1', '-1', type = str )
+    parser.add_argument( '--path2', '-2', type = str )
+    parser.add_argument( '--path-delimiter', '-d', type = str, default = '.' )
     parser.add_argument( '--no-color', action = 'store_true' )
     parser.add_argument( '--no-header', action = 'store_true' )
     parser.add_argument( '--indentation', '-i', type = int, default = 0 )
@@ -19,12 +22,23 @@ def main():
     color_red   = '\033[91m' if not args.no_color else ''
     color_end   = '\033[0m' if not args.no_color else ''
     
+    diffJson = DiffJson.fromFiles( args.file1, args.file2 )
+    
+    if args.path1 is not None:
+        if not diffJson.select1( args.path1, args.path_delimiter ):
+            print( 'Path "%s" not found in %s.' % (args.path1, args.file1.name) )
+            exit( 1 )
+    
+    if args.path2 is not None:
+        if not diffJson.select2( args.path2, args.path_delimiter ):
+            print( 'Path "%s" not found in %s.' % (args.path2, args.file2.name) )
+            exit( 1 )
+    
     if not args.no_header:
         print( ' ' * args.indentation + '< ' + color_red + args.file1.name + color_end )
         print( ' ' * args.indentation + '> ' + color_green + args.file2.name + color_end )
         print( ' ' * args.indentation + '---' )
     
-    diffJson = DiffJson.fromFiles( args.file1, args.file2 )
     diffJson.colored = not args.no_color
     diffJson.printDiff( args.indentation )
 
