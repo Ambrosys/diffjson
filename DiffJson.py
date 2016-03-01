@@ -1,7 +1,8 @@
-
-""" diff JSON objects """
+# coding=UTF-8
 
 from __future__ import print_function
+
+""" diff JSON objects """
 
 __date__ = "2016-02-26"
 __author__ = "Fabian Sandoval Saldias"
@@ -69,17 +70,17 @@ class DiffJson(object):
         return cls( json1, json2 )
     
     def select1( self, path, delimiter ):
-        json = DiffJson.getPath( self._json1, path, delimiter )
-        if json is not None:
-            self._json1 = json
+        sub = DiffJson.getPath( self._json1, path, delimiter )
+        if sub is not None:
+            self._json1 = sub
             return True
         else:
             return False
     
     def select2( self, path, delimiter ):
-        json = DiffJson.getPath( self._json2, path, delimiter )
-        if json is not None:
-            self._json2 = json
+        sub = DiffJson.getPath( self._json2, path, delimiter )
+        if sub is not None:
+            self._json2 = sub
             return True
         else:
             return False
@@ -101,6 +102,9 @@ class DiffJson(object):
         
     @property
     def modifiedValueFormatter( self ):
+        """
+        @rtype: (str, str) -> str
+        """
         return self._modifiedValueFormatter
     
     @modifiedValueFormatter.setter
@@ -146,15 +150,15 @@ class DiffJson(object):
         return self.__color_end if self._colored else ''
     
     @staticmethod
-    def getPath( json, path, delimiter ):
-        elem = json
+    def getPath( jsonDict, path, delimiter ):
+        elem = jsonDict
         try:
             for x in path.strip( delimiter ).split( delimiter ):
                 if isinstance( elem, dict ):
                     elem = elem[x]
                 elif isinstance( elem, list ):
                     elem = elem[int(x)]
-        except:
+        except KeyError:
             return None
         return elem
         
@@ -162,21 +166,23 @@ class DiffJson(object):
         if isinstance( key, int ):
             return path + color + '[' + str(key) + ']' + self.color_end
         else:
-            if( path == '' ):
+            if path == '':
                 return color + key + self.color_end
             else:
                 return path + '.' + color + key + self.color_end
     
-    def _combinePath( self, path, key ):
+    @staticmethod
+    def _combinePath( path, key ):
         if isinstance( key, int ):
             return path + '[' + str(key) + ']'
         else:
-            if( path == '' ):
+            if path == '':
                 return key
             else:
                 return path + '.' + key
-    
-    def _prettyValue( self, value ):
+
+    @staticmethod
+    def _prettyValue( value ):
         if isinstance( value, dict ) or isinstance( value, list ):
             return json.dumps( value, sort_keys = sys.version_info < (2, 7) )
         elif isinstance( value, bool ):
@@ -199,11 +205,11 @@ class DiffJson(object):
                 del remaining[key]
             else:
                 self.__printer( self.prefix_removed + self._coloredKey( path, key, self.color_removed ) + ': ' +
-                    self._prettyValue( value )
+                    DiffJson._prettyValue( value )
                     )
         for key, value in remaining.iteritems():
             self.__printer( self.prefix_added + self._coloredKey( path, key, self.color_added ) + ': ' +
-                self._prettyValue( value )
+                DiffJson._prettyValue( value )
                 )
     
     def __diffList( self, path, original, modified ):
@@ -212,23 +218,24 @@ class DiffJson(object):
                 self.__diffValue( path, key, value, modified[key] )
             else:
                 self.__printer( self.prefix_removed + self._coloredKey( path, key, self.color_removed ) + ': ' +
-                    self._prettyValue( value )
+                    DiffJson._prettyValue( value )
                     )
         for key, value in enumerate( modified[len(original):] ):
             self.__printer( self.prefix_added + self._coloredKey( path, key + len(original), self.color_added ) + ': ' +
-                self._prettyValue( value )
+                DiffJson._prettyValue( value )
                 )
     
     def __diffValue( self, path, key, original, modified ):
         if original != modified:
             if isinstance( original, dict ) and isinstance( modified, dict ):
-                self.__diffDict( self._combinePath( path, key ), original, modified )
+                self.__diffDict( DiffJson._combinePath( path, key ), original, modified )
             elif isinstance( original, list ) and isinstance( modified, list ):
-                self.__diffList( self._combinePath( path, key ), original, modified )
+                self.__diffList( DiffJson._combinePath( path, key ), original, modified )
             else:
+                value = self.modifiedValueFormatter(
+                    self.color_removed + DiffJson._prettyValue( original ) + self.color_end,
+                    self.color_added + DiffJson._prettyValue( modified ) + self.color_end
+                    )
                 self.__printer( self.prefix_modified + self._coloredKey( path, key, self.color_modified ) + ': ' +
-                    self.modifiedValueFormatter(
-                        self.color_removed + self._prettyValue( original ) + self.color_end,
-                        self.color_added + self._prettyValue( modified ) + self.color_end
-                        )
+                    str( value )
                     )

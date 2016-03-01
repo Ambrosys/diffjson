@@ -1,4 +1,9 @@
 #!/usr/bin/python
+# coding=UTF-8
+
+__date__ = '2016-03-01'
+__author__ = 'Fabian Sandoval Saldias'
+__email__ = 'fabianvss@gmail.com'
 
 import argparse
 from DiffJson import *
