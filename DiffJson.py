@@ -19,7 +19,7 @@ Note: JSON files are loaded with OrderedDict when supported (Python >= 2.7).
 
 Two examples resulting in the following output (but colored).
     Output (when initialized with OrderedDict instead of regular dict):
-        * a.x: 1 <> 2
+        ~ a.x: 1 > 2
         < a.y: true
         > b: null
     Initialization (with regular dict for simplicity in this example):

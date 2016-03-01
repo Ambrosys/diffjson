@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # coding=UTF-8
 
+""" diff JSON files """
+
 __date__ = '2016-03-01'
 __author__ = 'Fabian Sandoval Saldias'
 __email__ = 'fabianvss@gmail.com'
