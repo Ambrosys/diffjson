@@ -40,19 +40,44 @@ Two examples resulting in the following output (but colored).
 """
 
 class DiffJson(object):
+
+    class Dye(object):
+
+        def __init__( self ):
+            self._colored = False
+            self._c_added    = '\033[92m' # Green
+            self._c_removed  = '\033[91m' # Red
+            self._c_modified = '\033[94m' # Blue
+            self.__c_end     = '\033[0m'  # Default shell color
+
+        @property
+        def colored( self ):
+            return self._colored
+
+        @colored.setter
+        def colored( self, value ):
+            self._colored = value
+
+        def setColors( self, added, removed, modified ):
+            self._c_added = added
+            self._c_removed = removed
+            self._c_modified = modified
+
+        def added( self, text ): return self._coloredText( text, self._c_added )
+        def removed( self, text ): return self._coloredText( text, self._c_removed )
+        def modified( self, text ): return self._coloredText( text, self._c_modified )
+
+        def _coloredText( self, text, color ):
+            return color + text + self.__c_end if self.colored else text
     
     def __init__( self, json1, json2 ):
         self._json1 = json1
         self._json2 = json2
-        self._colored = False
+        self._dye = self.Dye()
         self._modifiedValueFormatter = lambda v1, v2: v1 + ' > ' + v2
         self._prefix_added    = '> '
         self._prefix_removed  = '< '
         self._prefix_modified = '~ '
-        self._color_added    = '\033[92m' # Green
-        self._color_removed  = '\033[91m' # Red
-        self._color_modified = '\033[94m' # Blue
-        self.__color_end = '\033[0m' # Default shell color
         
     @classmethod
     def fromPaths( cls, path1, path2 ):
@@ -94,11 +119,11 @@ class DiffJson(object):
         
     @property
     def colored( self ):
-        return self._colored
+        return self._dye.colored
         
     @colored.setter
     def colored( self, value ):
-        self._colored = value
+        self._dye.colored = value
         
     @property
     def modifiedValueFormatter( self ):
@@ -117,9 +142,7 @@ class DiffJson(object):
         self._prefix_modified = modified
         
     def setColors( self, added, removed, modified ):
-        self._color_added = added
-        self._color_removed = removed
-        self._color_modified = modified
+        self._dye.setColors( added, removed, modified )
         
     @property
     def prefix_added( self ):
@@ -132,23 +155,7 @@ class DiffJson(object):
     @property
     def prefix_modified( self ):
         return self._prefix_modified
-        
-    @property
-    def color_added( self ):
-        return self._color_added if self._colored else ''
-        
-    @property
-    def color_removed( self ):
-        return self._color_removed if self._colored else ''
-        
-    @property
-    def color_modified( self ):
-        return self._color_modified if self._colored else ''
-        
-    @property
-    def color_end( self ):
-        return self.__color_end if self._colored else ''
-    
+
     @staticmethod
     def getPath( jsonDictOrList, path, delimiter ):
         elem = jsonDictOrList
@@ -162,14 +169,14 @@ class DiffJson(object):
             return None
         return elem
         
-    def _coloredKey( self, path, key, color ):
+    def _coloredKey( self, path, key, dyer ):
         if isinstance( key, int ):
-            return path + color + '[' + str(key) + ']' + self.color_end
+            return path + dyer( '[' + str(key) + ']' )
         else:
             if path == '':
-                return color + key + self.color_end
+                return dyer( key )
             else:
-                return path + '.' + color + key + self.color_end
+                return path + '.' + dyer( key )
     
     @staticmethod
     def _combinePath( path, key ):
@@ -204,11 +211,11 @@ class DiffJson(object):
                 self.__diffValue( path, key, value, modified[key] )
                 del remaining[key]
             else:
-                self.__printer( self.prefix_removed + self._coloredKey( path, key, self.color_removed ) + ': ' +
+                self.__printer( self.prefix_removed + self._coloredKey( path, key, self._dye.removed ) + ': ' +
                     DiffJson._prettyValue( value )
                     )
         for key, value in remaining.iteritems():
-            self.__printer( self.prefix_added + self._coloredKey( path, key, self.color_added ) + ': ' +
+            self.__printer( self.prefix_added + self._coloredKey( path, key, self._dye.added ) + ': ' +
                 DiffJson._prettyValue( value )
                 )
     
@@ -217,11 +224,11 @@ class DiffJson(object):
             if key < len(modified):
                 self.__diffValue( path, key, value, modified[key] )
             else:
-                self.__printer( self.prefix_removed + self._coloredKey( path, key, self.color_removed ) + ': ' +
+                self.__printer( self.prefix_removed + self._coloredKey( path, key, self._dye.removed ) + ': ' +
                     DiffJson._prettyValue( value )
                     )
         for key, value in enumerate( modified[len(original):] ):
-            self.__printer( self.prefix_added + self._coloredKey( path, key + len(original), self.color_added ) + ': ' +
+            self.__printer( self.prefix_added + self._coloredKey( path, key + len(original), self._dye.added ) + ': ' +
                 DiffJson._prettyValue( value )
                 )
     
@@ -233,9 +240,9 @@ class DiffJson(object):
                 self.__diffList( DiffJson._combinePath( path, key ), original, modified )
             else:
                 value = self.modifiedValueFormatter(
-                    self.color_removed + DiffJson._prettyValue( original ) + self.color_end,
-                    self.color_added + DiffJson._prettyValue( modified ) + self.color_end
+                    self._dye.removed( DiffJson._prettyValue( original ) ),
+                    self._dye.added( DiffJson._prettyValue( modified ) )
                     )
-                self.__printer( self.prefix_modified + self._coloredKey( path, key, self.color_modified ) + ': ' +
+                self.__printer( self.prefix_modified + self._coloredKey( path, key, self._dye.modified ) + ': ' +
                     str( value )
                     )
