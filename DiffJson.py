@@ -150,15 +150,15 @@ class DiffJson(object):
         return self.__color_end if self._colored else ''
     
     @staticmethod
-    def getPath( jsonDict, path, delimiter ):
-        elem = jsonDict
+    def getPath( jsonDictOrList, path, delimiter ):
+        elem = jsonDictOrList
         try:
             for x in path.strip( delimiter ).split( delimiter ):
                 if isinstance( elem, dict ):
                     elem = elem[x]
                 elif isinstance( elem, list ):
                     elem = elem[int(x)]
-        except KeyError:
+        except (KeyError, IndexError):
             return None
         return elem
         
@@ -195,7 +195,7 @@ class DiffJson(object):
             return '"' + value + '"'
 
     def __diff( self ):
-        self.__diffDict( '', self._json1, self._json2 )
+        self.__diffValue( '', '', self._json1, self._json2 )
     
     def __diffDict( self, path, original, modified ):
         remaining = copy.deepcopy( modified )

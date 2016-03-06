@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # coding=UTF-8
 
+from __future__ import print_function
+
 """ diff JSON files """
 
 __date__ = '2016-03-01'
@@ -30,12 +32,12 @@ def main():
     
     if args.path1 is not None:
         if not diffJson.select1( args.path1, args.path_delimiter ):
-            print >>sys.stderr, 'Path "%s" not found in %s.' % (args.path1, args.file1.name)
+            print( 'Path "%s" not found in %s.' % (args.path1, args.file1.name), file = sys.stderr )
             exit( 1 )
     
     if args.path2 is not None:
         if not diffJson.select2( args.path2, args.path_delimiter ):
-            print >>sys.stderr, 'Path "%s" not found in %s.' % (args.path2, args.file2.name)
+            print( 'Path "%s" not found in %s.' % (args.path2, args.file2.name), file = sys.stderr )
             exit( 1 )
     
     if not args.no_header:
