@@ -68,7 +68,7 @@ class DiffJson(object):
         def modified( self, text ): return self._coloredText( text, self._c_modified )
 
         def _coloredText( self, text, color ):
-            return color + text + self.__c_end if self.colored else text
+            return color + text + self.__c_end if self.colored and sys.stdout.isatty() else text
     
     def __init__( self, json1, json2 ):
         self._json1 = json1
