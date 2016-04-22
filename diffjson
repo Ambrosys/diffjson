@@ -16,8 +16,9 @@ def main():
     parser = argparse.ArgumentParser( description='Diff JSON files.' )
     parser.add_argument( 'file1', type = argparse.FileType('r') )
     parser.add_argument( 'file2', type = argparse.FileType('r') )
-    parser.add_argument( '--path1', '-1', type = str )
-    parser.add_argument( '--path2', '-2', type = str )
+    parser.add_argument( '--path', '-p', type = str, help = 'Common root path for both files' )
+    parser.add_argument( '--path1', '-1', type = str, help = 'Sub path for file1' )
+    parser.add_argument( '--path2', '-2', type = str, help = 'Sub path for file2' )
     parser.add_argument( '--path-delimiter', '-d', type = str, default = '.' )
     parser.add_argument( '--no-color', action = 'store_true' )
     parser.add_argument( '--no-header', action = 'store_true' )
@@ -30,19 +31,33 @@ def main():
     
     diffJson = DiffJson.fromFiles( args.file1, args.file2 )
     
-    if args.path1 is not None:
-        if not diffJson.select1( args.path1, args.path_delimiter ):
-            print( 'Path "%s" not found in %s.' % (args.path1, args.file1.name), file = sys.stderr )
+    # combine args.path and args.path1/2
+    if args.path is not None:
+        path1 = args.path
+        path2 = args.path
+        if args.path1 is not None: path1 += args.path_delimiter + args.path1
+        if args.path2 is not None: path2 += args.path_delimiter + args.path2
+    else:
+        path1 = args.path1
+        path2 = args.path2
+    
+    if path1 is not None:
+        if not diffJson.select1( path1, args.path_delimiter ):
+            print( 'Path "%s" not found in %s.' % (path1, args.file1.name), file = sys.stderr )
             exit( 1 )
     
-    if args.path2 is not None:
-        if not diffJson.select2( args.path2, args.path_delimiter ):
-            print( 'Path "%s" not found in %s.' % (args.path2, args.file2.name), file = sys.stderr )
+    if path2 is not None:
+        if not diffJson.select2( path2, args.path_delimiter ):
+            print( 'Path "%s" not found in %s.' % (path2, args.file2.name), file = sys.stderr )
             exit( 1 )
     
     if not args.no_header:
-        print( ' ' * args.indentation + '< ' + color_red + args.file1.name + color_end )
-        print( ' ' * args.indentation + '> ' + color_green + args.file2.name + color_end )
+        location1 = ''
+        location2 = ''
+        if path1 is not None: location1 = ':' + path1
+        if path2 is not None: location2 = ':' + path2
+        print( ' ' * args.indentation + '< ' + color_red + args.file1.name + color_end + location1 )
+        print( ' ' * args.indentation + '> ' + color_green + args.file2.name + color_end + location2 )
         print( ' ' * args.indentation + '---' )
     
     diffJson.colored = not args.no_color
