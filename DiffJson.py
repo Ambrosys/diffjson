@@ -94,16 +94,16 @@ class DiffJson(object):
             json2 = json.load( file2 )
         return cls( json1, json2 )
     
-    def select1( self, path, delimiter ):
-        sub = DiffJson.getPath( self._json1, path, delimiter )
+    def select1( self, path, delimiter, deserializeOperator = None ):
+        sub = DiffJson.getPath( self._json1, path, delimiter, deserializeOperator )
         if sub is not None:
             self._json1 = sub
             return True
         else:
             return False
     
-    def select2( self, path, delimiter ):
-        sub = DiffJson.getPath( self._json2, path, delimiter )
+    def select2( self, path, delimiter, deserializeOperator = None ):
+        sub = DiffJson.getPath( self._json2, path, delimiter, deserializeOperator )
         if sub is not None:
             self._json2 = sub
             return True
@@ -157,14 +157,35 @@ class DiffJson(object):
         return self._prefix_modified
 
     @staticmethod
-    def getPath( jsonDictOrList, path, delimiter ):
+    def getPath( jsonDictOrList, path, delimiter, deserializeOperator ):
+        """
+        @type deserializeOperator: basestring|None
+        @param deserializeOperator: If not None, a path item with preceeding
+            deserializeOperator will cause the string value getting deserialized
+            into a json value. But only, if the path item is not an existing
+            key. Because then, we assume, that the user do not want to
+            deserialize but just navigate the key. If he intends to actually
+            deserialize, he must give another deserializeOperator, that does not
+            conflict with existing keys.
+        """
         elem = jsonDictOrList
         try:
             for x in path.strip( delimiter ).split( delimiter ):
+                deserializeValue = False
+                if deserializeOperator is not None and isinstance( x, basestring ) and not x in elem and len(x) >= 1 and x[0] == deserializeOperator:
+                    x = x[1:]
+                    deserializeValue = True
+
                 if isinstance( elem, dict ):
                     elem = elem[x]
                 elif isinstance( elem, list ):
                     elem = elem[int(x)]
+
+                if deserializeValue:
+                    if sys.version_info >= (2, 7):
+                        elem = json.loads( elem, object_pairs_hook=OrderedDict )
+                    else:
+                        elem = json.loads( elem )
         except (KeyError, IndexError):
             return None
         return elem

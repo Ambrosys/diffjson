@@ -13,13 +13,19 @@ import argparse
 from DiffJson import *
 
 def main():
-    parser = argparse.ArgumentParser( description='Diff JSON files.' )
+    parser = argparse.ArgumentParser( description='Diff JSON files.\n\n'
+        'You can navigate the JSON before comparison with --path or --path1/2.\n'
+        'You can deserialize a string value while navigating.\n'
+        'Example: diffjson --path Root.*JsonString.Going.Deeper a.json b.json',
+        formatter_class = argparse.RawTextHelpFormatter
+        )
     parser.add_argument( 'file1', type = argparse.FileType('r') )
     parser.add_argument( 'file2', type = argparse.FileType('r') )
     parser.add_argument( '--path', '-p', type = str, help = 'Common root path for both files' )
     parser.add_argument( '--path1', '-1', type = str, help = 'Sub path for file1' )
     parser.add_argument( '--path2', '-2', type = str, help = 'Sub path for file2' )
-    parser.add_argument( '--path-delimiter', '-d', type = str, default = '.' )
+    parser.add_argument( '--path-delimiter', '-d', type = str, default = '.', help = 'Default: %(default)s' )
+    parser.add_argument( '--path-deserialize-operator', '-z', type = str, default = '*', help = 'Default: %(default)s' )
     parser.add_argument( '--no-color', action = 'store_true' )
     parser.add_argument( '--no-header', action = 'store_true' )
     parser.add_argument( '--indentation', '-i', type = int, default = 0 )
@@ -42,12 +48,12 @@ def main():
         path2 = args.path2
     
     if path1 is not None:
-        if not diffJson.select1( path1, args.path_delimiter ):
+        if not diffJson.select1( path1, args.path_delimiter, args.path_deserialize_operator ):
             print( 'Path "%s" not found in %s.' % (path1, args.file1.name), file = sys.stderr )
             exit( 1 )
     
     if path2 is not None:
-        if not diffJson.select2( path2, args.path_delimiter ):
+        if not diffJson.select2( path2, args.path_delimiter, args.path_deserialize_operator ):
             print( 'Path "%s" not found in %s.' % (path2, args.file2.name), file = sys.stderr )
             exit( 1 )
     
