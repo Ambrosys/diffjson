@@ -16,19 +16,22 @@ def main():
     parser = argparse.ArgumentParser( description='Diff JSON files.\n\n'
         'You can navigate the JSON before comparison with --path or --path1/2.\n'
         'You can deserialize a string value while navigating.\n'
-        'Example: diffjson --path Root.*JsonString.Going.Deeper a.json b.json',
+        'Example: diffjson --path Root.*JsonString.Going.Deeper a.json b.json\n'
+        'You can ignore sub paths with --ignore PATH statements.',
         formatter_class = argparse.RawTextHelpFormatter
         )
     parser.add_argument( 'file1', type = argparse.FileType('r') )
     parser.add_argument( 'file2', type = argparse.FileType('r') )
     parser.add_argument( '--path', '-p', type = str, help = 'Common root path for both files' )
-    parser.add_argument( '--path1', '-1', type = str, help = 'Sub path for file1' )
-    parser.add_argument( '--path2', '-2', type = str, help = 'Sub path for file2' )
-    parser.add_argument( '--path-delimiter', '-d', type = str, default = '.', help = 'Default: %(default)s' )
-    parser.add_argument( '--path-deserialize-operator', '-z', type = str, default = '*', help = 'Default: %(default)s' )
+    parser.add_argument( '--path1', '-1', type = str, metavar = 'PATH', help = 'Sub path for file1' )
+    parser.add_argument( '--path2', '-2', type = str, metavar = 'PATH', help = 'Sub path for file2' )
+    parser.add_argument( '--ignore', '-i', type = str, action = 'append', default = [], metavar = 'PATH', help = 'Sub paths to ignore' )
+    parser.add_argument( '--path-delimiter', '-d', type = str, default = '.', metavar = 'STRING', help = 'Default: %(default)s' )
+    parser.add_argument( '--deserialize-operator', '-s', type = str, default = '*', metavar = 'STRING', help = 'Default: %(default)s' )
     parser.add_argument( '--no-color', action = 'store_true' )
     parser.add_argument( '--no-header', action = 'store_true' )
-    parser.add_argument( '--indentation', '-i', type = int, default = 0 )
+    parser.add_argument( '--no-ignore-list', action = 'store_true', help = 'Do not print ignore list in header' )
+    parser.add_argument( '--indentation', '-t', type = int, metavar = 'NUMBER', default = 0 )
     args = parser.parse_args()
     
     color_green = '\033[92m' if not args.no_color else ''
@@ -46,14 +49,18 @@ def main():
     else:
         path1 = args.path1
         path2 = args.path2
+
+    diffJson.pathDelimiter = args.path_delimiter
+    diffJson.deserializeOperator = args.deserialize_operator
+    diffJson.ignorePaths = args.ignore
     
     if path1 is not None:
-        if not diffJson.select1( path1, args.path_delimiter, args.path_deserialize_operator ):
+        if not diffJson.select1( path1 ):
             print( 'Path "%s" not found in %s.' % (path1, args.file1.name), file = sys.stderr )
             exit( 1 )
     
     if path2 is not None:
-        if not diffJson.select2( path2, args.path_delimiter, args.path_deserialize_operator ):
+        if not diffJson.select2( path2 ):
             print( 'Path "%s" not found in %s.' % (path2, args.file2.name), file = sys.stderr )
             exit( 1 )
     
@@ -64,7 +71,10 @@ def main():
         if path2 is not None: location2 = ':' + path2
         print( ' ' * args.indentation + '< ' + color_red + args.file1.name + color_end + location1 )
         print( ' ' * args.indentation + '> ' + color_green + args.file2.name + color_end + location2 )
-        print( ' ' * args.indentation + '---' )
+        if not args.no_ignore_list and args.ignore:
+            for i in args.ignore:
+                print( ' ' * args.indentation + '- ' + i )
+            print( ' ' * args.indentation + '---' )
     
     diffJson.colored = not args.no_color
     diffJson.printDiff( args.indentation )

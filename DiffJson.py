@@ -13,6 +13,7 @@ import copy
 from collections import OrderedDict
 import sys
 import contextlib
+import re
 
 """
 Note: JSON files are loaded with OrderedDict when supported (Python >= 2.7).
@@ -33,6 +34,18 @@ Two examples resulting in the following output (but colored).
         diffPrinter.result = []
         diffJson( diffPrinter )
         print( '    ' + '\n    '.join( diffPrinter.result ) )
+    You can walk the JSON before comparison with select1() and select2(). The
+        keys have to be separated with the string defined by the property
+        pathDelimiter. With the property useSquareBrackets you decide whether to
+        use the array index syntax (that is, key[value] instead of key.value).
+    To ignore specific paths (relative to the final root paths after the usages
+        of select1() and select2()), add them to the list held by the property
+        ignorePaths. The key has to be separated with the string defined by the
+        property pathDelimiter.
+    You can deserialize specific string values to JSON while walking. To do that
+        preceed the key with the deserialize operator. To turn this feature on
+        set the property deserializeOperator to a string value; None turns this
+        off.
     The API supports to change furthermore:
         - how to print modified values via property modifiedValueFormatter
         - the prefixes via setPrefixes()
@@ -73,11 +86,15 @@ class DiffJson(object):
     def __init__( self, json1, json2 ):
         self._json1 = json1
         self._json2 = json2
+        self._ignorePaths = []
         self._dye = self.Dye()
         self._modifiedValueFormatter = lambda v1, v2: v1 + ' > ' + v2
         self._prefix_added    = '> '
         self._prefix_removed  = '< '
         self._prefix_modified = '~ '
+        self._pathDelimiter = '.'
+        self._deserializeOperator = None
+        self._useSquareBrackets = True
         
     @classmethod
     def fromPaths( cls, path1, path2 ):
@@ -94,16 +111,16 @@ class DiffJson(object):
             json2 = json.load( file2 )
         return cls( json1, json2 )
     
-    def select1( self, path, delimiter, deserializeOperator = None ):
-        sub = DiffJson.getPath( self._json1, path, delimiter, deserializeOperator )
+    def select1( self, path ):
+        sub = DiffJson.getPath( self._json1, path, self._pathDelimiter, self._deserializeOperator, self._useSquareBrackets )
         if sub is not None:
             self._json1 = sub
             return True
         else:
             return False
     
-    def select2( self, path, delimiter, deserializeOperator = None ):
-        sub = DiffJson.getPath( self._json2, path, delimiter, deserializeOperator )
+    def select2( self, path ):
+        sub = DiffJson.getPath( self._json2, path, self._pathDelimiter, self._deserializeOperator, self._useSquareBrackets )
         if sub is not None:
             self._json2 = sub
             return True
@@ -116,7 +133,21 @@ class DiffJson(object):
         
     def printDiff( self, indentation = 0 ):
         self( lambda item: print( ' ' * indentation + item ) )
-        
+
+    @property
+    def ignorePaths( self ):
+        """
+        @rtype: [basestring]
+        """
+        return self._ignorePaths
+
+    @ignorePaths.setter
+    def ignorePaths( self, value ):
+        """
+        @type value: [basestring]
+        """
+        self._ignorePaths = value
+
     @property
     def colored( self ):
         return self._dye.colored
@@ -128,12 +159,15 @@ class DiffJson(object):
     @property
     def modifiedValueFormatter( self ):
         """
-        @rtype: (str, str) -> str
+        @rtype: (basestring, basestring) -> basestring
         """
         return self._modifiedValueFormatter
     
     @modifiedValueFormatter.setter
     def modifiedValueFormatter( self, value ):
+        """
+        @type value: (basestring, basestring) -> basestring
+        """
         self._modifiedValueFormatter = value
     
     def setPrefixes( self, added, removed, modified ):
@@ -156,8 +190,38 @@ class DiffJson(object):
     def prefix_modified( self ):
         return self._prefix_modified
 
+    @property
+    def pathDelimiter( self ):
+        return self._pathDelimiter
+
+    @pathDelimiter.setter
+    def pathDelimiter( self, value ):
+        self._pathDelimiter = value
+
+    @property
+    def deserializeOperator( self ):
+        """
+        @rtype: basestring|None
+        """
+        return self._deserializeOperator
+
+    @deserializeOperator.setter
+    def deserializeOperator( self, value ):
+        """
+        @type value: basestring|None
+        """
+        self._deserializeOperator = value
+
+    @property
+    def useSquareBrackets( self ):
+        return self._useSquareBrackets
+
+    @useSquareBrackets.setter
+    def useSquareBrackets( self, value ):
+        self._useSquareBrackets = value
+
     @staticmethod
-    def getPath( jsonDictOrList, path, delimiter, deserializeOperator ):
+    def getPath( jsonDictOrList, path, delimiter, deserializeOperator, useSquareBrackets ):
         """
         @type deserializeOperator: basestring|None
         @param deserializeOperator: If not None, a path item with preceeding
@@ -170,10 +234,29 @@ class DiffJson(object):
         """
         elem = jsonDictOrList
         try:
-            for x in path.strip( delimiter ).split( delimiter ):
+            paths = path.strip( delimiter ).split( delimiter )
+
+            if useSquareBrackets:
+                # convert key[value] to key.value
+                newPaths = []
+                for x in paths:
+                    if not deserializeOperator:
+                        regex = r'^.*\[([0-9]+)\]$'
+                    else:
+                        regex = r'^.*\[(' + re.escape(deserializeOperator) + r'[0-9]+)\]$'
+                    m = re.match( regex, x )
+                    if m:
+                        indexString = m.group( 1 )
+                        newPaths.append( x[:len( x ) - (len( indexString ) + 2)] )
+                        newPaths.append( indexString )
+                    else:
+                        newPaths.append( x )
+                paths = newPaths
+
+            for x in paths:
                 deserializeValue = False
-                if deserializeOperator is not None and isinstance( x, basestring ) and not x in elem and len(x) >= 1 and x[0] == deserializeOperator:
-                    x = x[1:]
+                if deserializeOperator is not None and not x in elem and len(x) >= len(deserializeOperator) and x[:len(deserializeOperator)] == deserializeOperator:
+                    x = x[len(deserializeOperator):]
                     deserializeValue = True
 
                 if isinstance( elem, dict ):
@@ -189,25 +272,24 @@ class DiffJson(object):
         except (KeyError, IndexError):
             return None
         return elem
-        
+
     def _coloredKey( self, path, key, dyer ):
-        if isinstance( key, int ):
-            return path + dyer( '[' + str(key) + ']' )
+        if self._useSquareBrackets and isinstance( key, int ):
+            return path + dyer( '[' + unicode(key) + ']' )
         else:
             if path == '':
-                return dyer( key )
+                return dyer( unicode(key) )
             else:
-                return path + '.' + dyer( key )
+                return path + self._pathDelimiter + dyer( unicode( key ) )
     
-    @staticmethod
-    def _combinePath( path, key ):
-        if isinstance( key, int ):
-            return path + '[' + str(key) + ']'
+    def _combinePath( self, path, key ):
+        if self._useSquareBrackets and isinstance( key, int ):
+            return path + '[' + unicode(key) + ']'
         else:
             if path == '':
-                return key
+                return unicode(key)
             else:
-                return path + '.' + key
+                return path + self._pathDelimiter + unicode( key )
 
     @staticmethod
     def _prettyValue( value ):
@@ -218,7 +300,7 @@ class DiffJson(object):
         elif value is None:
             return 'null'
         elif isinstance( value, int ) or isinstance( value, float ):
-            return str( value )
+            return unicode( value )
         else:
             return '"' + value + '"'
 
@@ -229,19 +311,26 @@ class DiffJson(object):
         remaining = copy.deepcopy( modified )
         for key, value in original.iteritems():
             if key in modified:
-                self.__diffValue( path, key, value, modified[key] )
                 del remaining[key]
+            if self._combinePath( path, key ) in self._ignorePaths:
+                continue
+            if key in modified:
+                self.__diffValue( path, key, value, modified[key] )
             else:
                 self.__printer( self.prefix_removed + self._coloredKey( path, key, self._dye.removed ) + ': ' +
                     DiffJson._prettyValue( value )
                     )
         for key, value in remaining.iteritems():
+            if self._combinePath( path, key ) in self._ignorePaths:
+                continue
             self.__printer( self.prefix_added + self._coloredKey( path, key, self._dye.added ) + ': ' +
                 DiffJson._prettyValue( value )
                 )
     
     def __diffList( self, path, original, modified ):
         for key, value in enumerate( original ):
+            if self._combinePath( path, key ) in self._ignorePaths:
+                continue
             if key < len(modified):
                 self.__diffValue( path, key, value, modified[key] )
             else:
@@ -249,21 +338,26 @@ class DiffJson(object):
                     DiffJson._prettyValue( value )
                     )
         for key, value in enumerate( modified[len(original):] ):
+            if self._combinePath( path, key ) in self._ignorePaths:
+                continue
             self.__printer( self.prefix_added + self._coloredKey( path, key + len(original), self._dye.added ) + ': ' +
                 DiffJson._prettyValue( value )
                 )
     
     def __diffValue( self, path, key, original, modified ):
         if original != modified:
+            fullPath = self._combinePath( path, key )
+            if fullPath in self._ignorePaths:
+                return
             if isinstance( original, dict ) and isinstance( modified, dict ):
-                self.__diffDict( DiffJson._combinePath( path, key ), original, modified )
+                self.__diffDict( fullPath, original, modified )
             elif isinstance( original, list ) and isinstance( modified, list ):
-                self.__diffList( DiffJson._combinePath( path, key ), original, modified )
+                self.__diffList( fullPath, original, modified )
             else:
                 value = self.modifiedValueFormatter(
                     self._dye.removed( DiffJson._prettyValue( original ) ),
                     self._dye.added( DiffJson._prettyValue( modified ) )
                     )
                 self.__printer( self.prefix_modified + self._coloredKey( path, key, self._dye.modified ) + ': ' +
-                    str( value )
+                    unicode( value )
                     )
