@@ -1,0 +1,18 @@
+{
+  "c": 6,
+  "aa": 7,
+  "y": "diff all the things!",
+  "z": true,
+  "removed": {
+    "red": true,
+    "green": false,
+    "blue": false
+  },
+  "common": {
+    "john": 4,
+    "still here": true
+  },
+  "equal": "!!!!",
+  "wasarray": [ 1, 2 ,3 ,4],
+  "stillisarray": [ 1, 1, 2, 5, 3, 4, 0, 2, 3, 2, 3, 5, 9]
+}

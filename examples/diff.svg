@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" 
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="402" height="330"
+>
+<g transform="translate(0 0)">
+  <text x="0" y="0" font-family="Courier New" font-size="12">
+    <tspan x="0" dy="1.2em">&lt; <tspan fill="red">left.json</tspan></tspan>
+    <tspan x="0" dy="1.2em">&gt; <tspan fill="green">right.json</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ <tspan fill="blue">c</tspan>: <tspan fill="red">6</tspan> &gt; <tspan fill="green">null</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ <tspan fill="blue">aa</tspan>: <tspan fill="red">7</tspan> &gt; <tspan fill="green">5</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ <tspan fill="blue">y</tspan>: <tspan fill="red">"diff all the things!"</tspan> &gt; <tspan fill="green">"DIFF ALL THE THINGS!"</tspan></tspan>
+    <tspan x="0" dy="1.2em">&lt; <tspan fill="red">removed</tspan>: {"red": true, "green": false, "blue": false}</tspan>
+    <tspan x="0" dy="1.2em">~ common.<tspan fill="blue">john</tspan>: <tspan fill="red">4</tspan> &gt; <tspan fill="green">null</tspan></tspan>
+    <tspan x="0" dy="1.2em">&gt; common.<tspan fill="green">mary</tspan>: 5</tspan>
+    <tspan x="0" dy="1.2em">~ <tspan fill="blue">wasarray</tspan>: <tspan fill="red">[1, 2, 3, 4]</tspan> &gt; <tspan fill="green">{"test": "5"}</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[0]</tspan>: <tspan fill="red">1</tspan> &gt; <tspan fill="green">3</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[1]</tspan>: <tspan fill="red">1</tspan> &gt; <tspan fill="green">4</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[2]</tspan>: <tspan fill="red">2</tspan> &gt; <tspan fill="green">0</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[3]</tspan>: <tspan fill="red">5</tspan> &gt; <tspan fill="green">2</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[6]</tspan>: <tspan fill="red">0</tspan> &gt; <tspan fill="green">6</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[7]</tspan>: <tspan fill="red">2</tspan> &gt; <tspan fill="green">4</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[8]</tspan>: <tspan fill="red">3</tspan> &gt; <tspan fill="green">2</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[9]</tspan>: <tspan fill="red">2</tspan> &gt; <tspan fill="green">3</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[10]</tspan>: <tspan fill="red">3</tspan> &gt; <tspan fill="green">5</tspan></tspan>
+    <tspan x="0" dy="1.2em">~ stillisarray<tspan fill="blue">[11]</tspan>: <tspan fill="red">5</tspan> &gt; <tspan fill="green">9</tspan></tspan>
+    <tspan x="0" dy="1.2em">&lt; stillisarray<tspan fill="red">[12]</tspan>: 9</tspan>
+    <tspan x="0" dy="1.2em">&gt; <tspan fill="green">b</tspan>: false</tspan>
+    <tspan x="0" dy="1.2em">&gt; <tspan fill="green">e</tspan>: {"john": 5, "mary": 6, "stephen": 8}</tspan>
+  </text>
+</g>
+</svg>
