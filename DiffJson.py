@@ -50,6 +50,7 @@ Two examples resulting in the following output (but colored).
         - how to print modified values via property modifiedValueFormatter
         - the prefixes via setPrefixes()
         - the colors used via setColors()
+        - option to not print irrelevant sub items via property minimal
 """
 
 class DiffJson(object):
@@ -95,6 +96,7 @@ class DiffJson(object):
         self._pathDelimiter = '.'
         self._deserializeOperator = None
         self._useSquareBrackets = True
+        self._minimal = False
         
     @classmethod
     def fromPaths( cls, path1, path2 ):
@@ -220,6 +222,14 @@ class DiffJson(object):
     def useSquareBrackets( self, value ):
         self._useSquareBrackets = value
 
+    @property
+    def minimal( self ):
+        return self._minimal
+
+    @colored.setter
+    def minimal( self, value ):
+        self._minimal = value
+
     @staticmethod
     def getPath( jsonDictOrList, path, delimiter, deserializeOperator, useSquareBrackets ):
         """
@@ -318,13 +328,13 @@ class DiffJson(object):
                 self.__diffValue( path, key, value, modified[key] )
             else:
                 self.__printer( self.prefix_removed + self._coloredKey( path, key, self._dye.removed ) + ': ' +
-                    DiffJson._prettyValue( value )
+                    (DiffJson._prettyValue( value ) if not self._minimal else '[...]')
                     )
         for key, value in remaining.iteritems():
             if self._combinePath( path, key ) in self._ignorePaths:
                 continue
             self.__printer( self.prefix_added + self._coloredKey( path, key, self._dye.added ) + ': ' +
-                DiffJson._prettyValue( value )
+                (DiffJson._prettyValue( value ) if not self._minimal else '[...]')
                 )
     
     def __diffList( self, path, original, modified ):
@@ -335,13 +345,13 @@ class DiffJson(object):
                 self.__diffValue( path, key, value, modified[key] )
             else:
                 self.__printer( self.prefix_removed + self._coloredKey( path, key, self._dye.removed ) + ': ' +
-                    DiffJson._prettyValue( value )
+                    (DiffJson._prettyValue( value ) if not self._minimal else '[...]')
                     )
         for key, value in enumerate( modified[len(original):] ):
             if self._combinePath( path, key ) in self._ignorePaths:
                 continue
             self.__printer( self.prefix_added + self._coloredKey( path, key + len(original), self._dye.added ) + ': ' +
-                DiffJson._prettyValue( value )
+                (DiffJson._prettyValue( value ) if not self._minimal else '[...]')
                 )
     
     def __diffValue( self, path, key, original, modified ):

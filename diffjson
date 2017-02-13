@@ -32,6 +32,7 @@ def main():
     parser.add_argument( '--no-header', action = 'store_true' )
     parser.add_argument( '--no-ignore-list', action = 'store_true', help = 'Do not print ignore list in header' )
     parser.add_argument( '--indentation', '-t', type = int, metavar = 'NUMBER', default = 0 )
+    parser.add_argument( '--minimal', '-m', action = 'store_true', help = 'Do not print irrelevant values' )
     args = parser.parse_args()
     
     color_green = '\033[92m' if not args.no_color else ''
@@ -53,7 +54,8 @@ def main():
     diffJson.pathDelimiter = args.path_delimiter
     diffJson.deserializeOperator = args.deserialize_operator
     diffJson.ignorePaths = args.ignore
-    
+    diffJson.minimal = args.minimal
+
     if path1 is not None:
         if not diffJson.select1( path1 ):
             print( 'Path "%s" not found in %s.' % (path1, args.file1.name), file = sys.stderr )
